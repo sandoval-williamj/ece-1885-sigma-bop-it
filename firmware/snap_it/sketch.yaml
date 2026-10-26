@@ -1,0 +1,22 @@
+default_profile: esp32_psram
+
+profiles:
+  esp32_psram:
+    notes: Generic ESP32 target with PSRAM enabled for the reveal buffer.
+    fqbn: esp32:esp32:esp32:PSRAM=enabled
+    platforms:
+      - platform: esp32:esp32 (3.3.12)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json
+    libraries:
+      - Adafruit HX8357 Library (1.1.20)
+      - Adafruit GFX Library (1.13.0)
+      - Adafruit ImageReader Library (2.10.0)
+      - Adafruit MPU6050 (2.2.9)
+      - ESP32Encoder (5.0.0)
+      - ESP8266Audio (2.4.1)
+      - dependency: Adafruit BusIO (1.17.4)
+      - dependency: Adafruit Unified Sensor (1.1.15)
+      - dependency: Adafruit SPIFlash (5.1.1)
+      - dependency: Adafruit EPD (4.6.14)
+      - dependency: SdFat - Adafruit Fork (2.3.103)
+
