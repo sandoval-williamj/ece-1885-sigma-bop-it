@@ -36,13 +36,15 @@ bool Inputs::DebouncedButton::takePress() {
 }
 
 bool Inputs::begin() {
+  pinMode(Config::PIN_SNAP_LED, OUTPUT);
+  digitalWrite(Config::PIN_SNAP_LED, LOW);
   snapButton_.begin(Config::PIN_SNAP_BUTTON);
   startButton_.begin(Config::PIN_START_BUTTON);
   imageButton_.begin(Config::PIN_IMAGE_BUTTON);
 
-  pinMode(Config::PIN_ENCODER_A, INPUT);
-  pinMode(Config::PIN_ENCODER_B, INPUT);
-  ESP32Encoder::useInternalWeakPullResistors = puType::none;
+  pinMode(Config::PIN_ENCODER_A, INPUT_PULLUP);
+  pinMode(Config::PIN_ENCODER_B, INPUT_PULLUP);
+  ESP32Encoder::useInternalWeakPullResistors = puType::up;
   encoder_.attachHalfQuad(Config::PIN_ENCODER_A, Config::PIN_ENCODER_B);
   encoder_.setCount(0);
 
@@ -64,9 +66,20 @@ void Inputs::update(uint32_t nowMs) {
   startButton_.update(nowMs);
   imageButton_.update(nowMs);
 
-  if (snapButton_.takePress() && !gameplayActionPending_) {
-    pendingGameplayAction_ = Command::Snap;
-    gameplayActionPending_ = true;
+  if (snapLedOn_ && static_cast<int32_t>(nowMs - snapLedOffAtMs_) >= 0) {
+    digitalWrite(Config::PIN_SNAP_LED, LOW);
+    snapLedOn_ = false;
+  }
+
+  if (snapButton_.takePress()) {
+    digitalWrite(Config::PIN_SNAP_LED, HIGH);
+    snapLedOn_ = true;
+    snapLedOffAtMs_ = nowMs + Config::SNAP_LED_PULSE_MS;
+
+    if (!gameplayActionPending_) {
+      pendingGameplayAction_ = Command::Snap;
+      gameplayActionPending_ = true;
+    }
   }
 
   const int64_t encoderCount = encoder_.getCount();

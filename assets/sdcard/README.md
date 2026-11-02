@@ -1,12 +1,15 @@
-# SD card media
+# Source and legacy media
 
-Copy the `IMAGES` and `AUDIO` directories to the root of a FAT32 microSD card.
-The filenames deliberately use the conservative 8.3 format.
+The production game no longer reads a microSD card. These files are retained
+as editable/source assets for regenerating the arrays compiled into
+`firmware/snap_it/`.
 
 ## Images
 
-Firmware images must be uncompressed, 24-bit, 480×288 BMP files. Their order
-and user-facing labels are defined in `firmware/snap_it/Config.h`.
+The `IMAGES` directory contains the original generated integration fixtures.
+The production game currently embeds the licensed photographs from
+`assets/pitt_test_images/`; their order and labels are defined in
+`firmware/snap_it/EmbeddedAssets.cpp`.
 
 The included images are generated test artwork, not final product graphics.
 Replace them in place or update the manifest when the graphics are ready.
@@ -20,7 +23,8 @@ ffmpeg -i source.png -vf scale=480:288:force_original_aspect_ratio=decrease,pad=
 ## Audio
 
 Command prompts are mono, signed 16-bit PCM WAV files sampled at 22,050 Hz.
-The included computer-generated speech is a replaceable integration fixture.
+The included computer-generated speech is embedded unchanged in the current
+firmware and remains a replaceable integration fixture.
 
 Example conversion:
 

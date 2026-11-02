@@ -1,9 +1,9 @@
 #pragma once
 
 #include <Adafruit_HX8357.h>
-#include <Adafruit_ImageReader.h>
 #include <Arduino.h>
 
+#include "Config.h"
 #include "GameTypes.h"
 
 class Display {
@@ -29,9 +29,8 @@ class Display {
   void drawTile(uint16_t tileIndex);
 
   Adafruit_HX8357 tft_;
-  Adafruit_ImageReader reader_;
-  Adafruit_Image image_;
-  uint16_t tileOrder_[990] = {};
+  const uint8_t *imagePixels_ = nullptr;
+  uint16_t tileOrder_[Config::TILE_COUNT] = {};
   uint16_t revealedTiles_ = 0;
   bool tftStarted_ = false;
   bool ready_ = false;

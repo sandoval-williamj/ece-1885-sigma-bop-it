@@ -41,6 +41,8 @@ class Inputs {
   bool ready_ = false;
   bool gameplayActionPending_ = false;
   Command pendingGameplayAction_ = Command::Snap;
+  bool snapLedOn_ = false;
+  uint32_t snapLedOffAtMs_ = 0;
   int64_t lastEncoderCount_ = 0;
   uint32_t lastImuSampleMs_ = 0;
   uint32_t nextShakeAllowedMs_ = 0;

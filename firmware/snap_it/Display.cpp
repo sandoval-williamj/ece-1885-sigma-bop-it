@@ -1,46 +1,45 @@
 #include "Display.h"
 
 #include <SPI.h>
-#include <esp32-hal-psram.h>
 #include <esp_system.h>
-#include <string.h>
 
 #include "Config.h"
-#include "MediaCard.h"
+#include "EmbeddedAssets.h"
 
 static_assert(Config::TILE_COUNT == 990,
               "The reveal grid must contain exactly 990 tiles.");
 
 Display::Display()
-    : tft_(Config::PIN_TFT_CS, Config::PIN_TFT_DC, Config::PIN_TFT_RESET),
-      reader_(mediaCard) {}
+    : tft_(Config::PIN_TFT_CS, Config::PIN_TFT_DC, Config::PIN_TFT_RESET) {}
 
 bool Display::begin() {
-  SPI.begin(Config::PIN_SPI_SCK, Config::PIN_SPI_MISO, Config::PIN_SPI_MOSI);
-  tft_.begin();
+  // The card socket is not used, but holding its chip select high prevents it
+  // from driving the SPI bus while the TFT is active.
+  pinMode(Config::PIN_SD_CS, OUTPUT);
+  digitalWrite(Config::PIN_SD_CS, HIGH);
+  pinMode(Config::PIN_TFT_CS, OUTPUT);
+  digitalWrite(Config::PIN_TFT_CS, HIGH);
+
+  SPI.begin(Config::PIN_SPI_SCK, Config::PIN_SPI_MISO,
+            Config::PIN_SPI_MOSI);
+  tft_.begin(Config::TFT_SPI_HZ);
   tft_.setRotation(1);
   tft_.setTextWrap(false);
   tftStarted_ = true;
   tft_.fillScreen(HX8357_BLACK);
 
-  if (!psramFound()) {
-    lastError_ = "PSRAM is required but was not detected";
-    showFault(lastError_);
-    return false;
-  }
-
-  if (!beginMediaCard()) {
-    lastError_ = "microSD initialization failed";
-    showFault(lastError_);
-    return false;
-  }
-
   ready_ = true;
   lastError_ = "";
+  Serial.println(F("Display ready; images are embedded in flash."));
   return true;
 }
 
 void Display::showPicker(size_t imageIndex) {
+  if (imageIndex >= EmbeddedAssets::IMAGE_COUNT) {
+    showFault("Invalid embedded image index");
+    return;
+  }
+
   tft_.fillScreen(HX8357_BLACK);
   tft_.setTextColor(HX8357_WHITE);
   tft_.setTextSize(3);
@@ -50,46 +49,35 @@ void Display::showPicker(size_t imageIndex) {
   tft_.setTextColor(HX8357_CYAN);
   tft_.setTextSize(4);
   tft_.setCursor(24, 130);
-  tft_.print(Config::IMAGES[imageIndex].label);
+  tft_.print(EmbeddedAssets::IMAGES[imageIndex].label);
 
   tft_.setTextColor(HX8357_WHITE);
   tft_.setTextSize(2);
   tft_.setCursor(24, 205);
   tft_.print(imageIndex + 1);
   tft_.print(F(" / "));
-  tft_.print(Config::IMAGE_COUNT);
+  tft_.print(EmbeddedAssets::IMAGE_COUNT);
   tft_.setCursor(24, 260);
   tft_.print(F("IMAGE cycles   START plays"));
 }
 
 bool Display::prepareRound(size_t imageIndex) {
-  if (!ready_ || imageIndex >= Config::IMAGE_COUNT) {
+  if (!ready_ || imageIndex >= EmbeddedAssets::IMAGE_COUNT) {
     lastError_ = "Invalid display or image selection state";
     return false;
   }
 
-  const ImageReturnCode result =
-      reader_.loadBMP(Config::IMAGES[imageIndex].filename, image_);
-  if (result != IMAGE_SUCCESS) {
-    lastError_ = "Image could not be loaded from microSD";
-    Serial.print(F("ERROR loading "));
-    Serial.println(Config::IMAGES[imageIndex].filename);
-    reader_.printStatus(result);
-    showFault(lastError_);
-    return false;
-  }
-
-  if (image_.getFormat() != IMAGE_16 ||
-      image_.width() != Config::IMAGE_WIDTH ||
-      image_.height() != Config::IMAGE_HEIGHT) {
-    lastError_ = "Image must be an uncompressed 480x288 BMP";
-    showFault(lastError_);
+  imagePixels_ = EmbeddedAssets::IMAGES[imageIndex].pixels;
+  if (imagePixels_ == nullptr) {
+    lastError_ = "Embedded image data is unavailable";
     return false;
   }
 
   tft_.fillScreen(HX8357_BLACK);
   shuffleTiles();
   revealedTiles_ = 0;
+  Serial.print(F("Round image: "));
+  Serial.println(EmbeddedAssets::IMAGES[imageIndex].label);
   return true;
 }
 
@@ -135,8 +123,7 @@ void Display::revealNextTiles(uint8_t count) {
 }
 
 void Display::drawTile(uint16_t tileIndex) {
-  auto *canvas = static_cast<GFXcanvas16 *>(image_.getCanvas());
-  if (canvas == nullptr) {
+  if (imagePixels_ == nullptr) {
     return;
   }
 
@@ -151,18 +138,23 @@ void Display::drawTile(uint16_t tileIndex) {
   const int16_t width = x1 - x0;
   const int16_t height = y1 - y0;
 
-  constexpr int16_t kMaxTileWidth =
+  constexpr int16_t MAX_TILE_WIDTH =
       (Config::IMAGE_WIDTH + Config::TILE_COLUMNS - 1) /
       Config::TILE_COLUMNS;
-  constexpr int16_t kMaxTileHeight =
+  constexpr int16_t MAX_TILE_HEIGHT =
       (Config::IMAGE_HEIGHT + Config::TILE_ROWS - 1) / Config::TILE_ROWS;
-  uint16_t tilePixels[kMaxTileWidth * kMaxTileHeight];
-  const uint16_t *imagePixels = canvas->getBuffer();
+  uint16_t tilePixels[MAX_TILE_WIDTH * MAX_TILE_HEIGHT];
+  const uint16_t *sourcePixels =
+      reinterpret_cast<const uint16_t *>(imagePixels_);
 
   for (int16_t sourceRow = 0; sourceRow < height; ++sourceRow) {
-    memcpy(&tilePixels[sourceRow * width],
-           &imagePixels[(y0 + sourceRow) * Config::IMAGE_WIDTH + x0],
-           width * sizeof(uint16_t));
+    for (int16_t sourceColumn = 0; sourceColumn < width; ++sourceColumn) {
+      const size_t sourceIndex =
+          static_cast<size_t>(y0 + sourceRow) * Config::IMAGE_WIDTH + x0 +
+          sourceColumn;
+      tilePixels[sourceRow * width + sourceColumn] =
+          pgm_read_word(sourcePixels + sourceIndex);
+    }
   }
 
   tft_.drawRGBBitmap(x0, Config::STATUS_HEIGHT + y0, tilePixels, width,
@@ -202,4 +194,3 @@ void Display::showFault(const char *message) {
   tft_.println(F("See Serial and docs/testing.md"));
   tft_.setTextWrap(false);
 }
-

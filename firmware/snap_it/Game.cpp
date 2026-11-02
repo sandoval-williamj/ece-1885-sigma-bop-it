@@ -5,6 +5,7 @@
 #include "Audio.h"
 #include "Config.h"
 #include "Display.h"
+#include "EmbeddedAssets.h"
 #include "Inputs.h"
 
 Game::Game(Inputs &inputs, Display &display, Audio &audio)
@@ -37,7 +38,8 @@ void Game::update(uint32_t nowMs) {
     case GameState::GameOver:
     case GameState::Victory:
       if (inputs_.takeImagePress()) {
-        selectedImage_ = (selectedImage_ + 1) % Config::IMAGE_COUNT;
+        selectedImage_ =
+            (selectedImage_ + 1) % EmbeddedAssets::IMAGE_COUNT;
         state_ = GameState::Selecting;
         display_.showPicker(selectedImage_);
       } else if (inputs_.takeStartPress()) {

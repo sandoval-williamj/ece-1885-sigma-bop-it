@@ -1,57 +1,25 @@
 #include "Audio.h"
 
-#include <AudioFileSource.h>
+#include <AudioFileSourcePROGMEM.h>
 #include <AudioGeneratorWAV.h>
 #include <AudioOutputI2S.h>
-#include <SdFat_Adafruit_Fork.h>
 
 #include "Config.h"
-#include "MediaCard.h"
+#include "EmbeddedAssets.h"
 
 namespace {
 
-class SdFatAudioSource : public AudioFileSource {
- public:
-  explicit SdFatAudioSource(const char *filename) { open(filename); }
-
-  bool open(const char *filename) override {
-    close();
-    file_ = mediaCard.open(filename, O_RDONLY);
-    return file_.isOpen();
+const EmbeddedAssets::AudioAsset &assetForCommand(Command command) {
+  switch (command) {
+    case Command::Snap:
+      return EmbeddedAssets::AUDIO_SNAP;
+    case Command::Focus:
+      return EmbeddedAssets::AUDIO_FOCUS;
+    case Command::Shake:
+      return EmbeddedAssets::AUDIO_SHAKE;
   }
-
-  uint32_t read(void *data, uint32_t length) override {
-    const int bytesRead = file_.read(data, length);
-    return bytesRead > 0 ? static_cast<uint32_t>(bytesRead) : 0;
-  }
-
-  bool seek(int32_t position, int direction) override {
-    switch (direction) {
-      case SEEK_SET:
-        return position >= 0 && file_.seekSet(position);
-      case SEEK_CUR:
-        return file_.seekCur(position);
-      case SEEK_END:
-        return file_.seekEnd(position);
-      default:
-        return false;
-    }
-  }
-
-  bool close() override {
-    if (file_.isOpen()) {
-      file_.close();
-    }
-    return true;
-  }
-
-  bool isOpen() override { return file_.isOpen(); }
-  uint32_t getSize() override { return file_.fileSize(); }
-  uint32_t getPos() override { return file_.curPosition(); }
-
- private:
-  File32 file_;
-};
+  return EmbeddedAssets::AUDIO_SNAP;
+}
 
 }  // namespace
 
@@ -61,11 +29,6 @@ Audio::~Audio() {
 }
 
 bool Audio::begin() {
-  if (!isMediaCardReady()) {
-    lastError_ = "Audio cannot access the microSD card";
-    return false;
-  }
-
   output_ = new AudioOutputI2S();
   if (output_ == nullptr ||
       !output_->SetPinout(Config::PIN_I2S_BCLK, Config::PIN_I2S_LRCLK,
@@ -79,39 +42,32 @@ bool Audio::begin() {
   output_->SetGain(Config::AUDIO_GAIN);
   ready_ = true;
   lastError_ = "";
+  Serial.println(F("Audio ready; voice prompts are embedded in flash."));
   return true;
-}
-
-const char *Audio::filenameFor(Command command) const {
-  switch (command) {
-    case Command::Snap:
-      return Config::AUDIO_SNAP;
-    case Command::Focus:
-      return Config::AUDIO_FOCUS;
-    case Command::Shake:
-      return Config::AUDIO_SHAKE;
-  }
-  return nullptr;
 }
 
 bool Audio::playCommand(Command command) {
   stop();
-  const char *filename = filenameFor(command);
-  source_ = new SdFatAudioSource(filename);
+  const EmbeddedAssets::AudioAsset &asset = assetForCommand(command);
+  source_ = new AudioFileSourcePROGMEM(asset.data, asset.byteCount);
   decoder_ = new AudioGeneratorWAV();
   if (source_ == nullptr || decoder_ == nullptr || !source_->isOpen()) {
-    lastError_ = "Spoken command WAV is missing";
-    Serial.print(F("ERROR opening audio file: "));
-    Serial.println(filename);
+    lastError_ = "Embedded spoken command is unavailable";
     stop();
     return false;
   }
 
   if (!decoder_->begin(source_, output_)) {
-    lastError_ = "Spoken command WAV could not be decoded";
+    lastError_ = "Embedded spoken command could not be decoded";
     stop();
     return false;
   }
+
+  Serial.print(F("Playing embedded voice prompt: "));
+  Serial.print(commandLabel(command));
+  Serial.print(F(" ("));
+  Serial.print(asset.byteCount);
+  Serial.println(F(" bytes)"));
   return true;
 }
 
@@ -142,4 +98,3 @@ void Audio::stop() {
     source_ = nullptr;
   }
 }
-

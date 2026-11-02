@@ -84,15 +84,11 @@ The test decodes all four quadrature edges for each pulse and reports only a
 completed detent. It does not use delays, so quick rotations are less likely to
 be missed.
 
-## microSD requirement for SNAP IT
+## Production media storage
 
 The ESP32-S3 DevKitC-1 does not need its own microSD socket. The Adafruit 2050
-display breakout already contains the microSD socket, and the ESP32 accesses
-that socket over the shared SPI bus using GPIO 8 for Card CS.
-
-The current game firmware requires the card. It loads the reveal images and
-the spoken-command WAV files from `assets/sdcard/`, and it enters a hardware
-fault if the card cannot be initialized. Removing this requirement would need
-a firmware and storage redesign to place the assets in onboard flash. PSRAM
-cannot replace the card because PSRAM is temporary working memory, not
-persistent storage.
+display breakout contains a socket, but the production game does not use it.
+The three RGB565 images and three spoken WAV commands are compiled into the
+ESP32-S3 application and read directly from flash. GPIO 8 holds Card CS high
+so the unused socket cannot interfere with the display bus. Neither a card nor
+PSRAM is required.

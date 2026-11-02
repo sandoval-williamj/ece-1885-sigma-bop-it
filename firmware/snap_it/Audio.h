@@ -22,8 +22,6 @@ class Audio {
   const char *lastError() const { return lastError_; }
 
  private:
-  const char *filenameFor(Command command) const;
-
   AudioFileSource *source_ = nullptr;
   AudioGeneratorWAV *decoder_ = nullptr;
   AudioOutputI2S *output_ = nullptr;

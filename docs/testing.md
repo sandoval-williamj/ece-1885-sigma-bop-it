@@ -5,21 +5,25 @@ session. Use the Serial Monitor at 115200 baud alongside the display.
 
 ## Build and startup
 
-- [ ] `arduino-cli compile --profile esp32_psram firmware/snap_it` succeeds.
-- [ ] The board reports PSRAM and initializes the TFT, SD card, MPU-6050, and
-      I²S audio without entering the red hardware-fault screen.
-- [ ] Removing the SD card, one manifest image, one command WAV, or the IMU
-      produces a useful LCD and Serial error instead of a reset or crash.
+- [ ] `arduino-cli compile --profile esp32s3_embedded firmware/snap_it`
+      succeeds and remains below the 3 MB application limit.
+- [ ] The board initializes the TFT, MPU-6050, and I²S audio without entering
+      the red hardware-fault screen.
+- [ ] The game starts and completes a round with no microSD card installed and
+      with PSRAM disabled.
 
 ## Component tests
 
 - [ ] Image Cycle advances through all labels and wraps to the first.
 - [ ] Start begins a round; Image Cycle and Start do nothing during the round.
 - [ ] Snap registers once per press without contact-bounce duplicates.
+- [ ] Every debounced SNAP press pulses the GPIO6 indicator LED for 150 ms,
+      including an incorrect SNAP response.
 - [ ] One encoder detent in either direction registers Focus once.
 - [ ] Normal handling does not register Shake; a deliberate shake registers
       once and respects the cooldown.
-- [ ] SNAP, FOCUS, and SHAKE WAV files are intelligible and free of dropouts.
+- [ ] Embedded SNAP, FOCUS, and SHAKE speech is intelligible and free of
+      dropouts.
 - [ ] The MAX98357A and speaker remain within safe temperature and volume.
 
 ## Gameplay tests

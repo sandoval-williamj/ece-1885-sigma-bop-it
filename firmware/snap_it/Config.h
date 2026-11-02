@@ -4,30 +4,54 @@
 
 namespace Config {
 
-// Provisional ESP32 Dev Module pin map. Review before PCB layout.
-constexpr uint8_t PIN_SPI_SCK = 18;
-constexpr uint8_t PIN_SPI_MISO = 19;
-constexpr uint8_t PIN_SPI_MOSI = 23;
-constexpr uint8_t PIN_TFT_CS = 4;
-constexpr uint8_t PIN_TFT_DC = 16;
-constexpr uint8_t PIN_TFT_RESET = 17;
-constexpr uint8_t PIN_SD_CS = 13;
+// Current ESP32-S3 DevKitC-1 bench pin map. A later Feather migration will
+// require a new board-specific mapping.
 
-constexpr uint8_t PIN_I2C_SDA = 21;
-constexpr uint8_t PIN_I2C_SCL = 22;
+// Adafruit 2050 HX8357D display and its onboard microSD socket. The game now
+// uses embedded media, so MISO and SD CS are retained only to keep the unused
+// card interface safely deselected and available for possible future use.
+constexpr uint8_t PIN_SPI_SCK = 12;
+constexpr uint8_t PIN_SPI_MISO = 13;
+constexpr uint8_t PIN_SPI_MOSI = 11;
+constexpr uint8_t PIN_TFT_CS = 10;
+constexpr uint8_t PIN_TFT_DC = 9;
+constexpr uint8_t PIN_TFT_RESET = 14;
+constexpr uint8_t PIN_SD_CS = 8;
+constexpr uint32_t TFT_SPI_HZ = 8000000;
 
-constexpr uint8_t PIN_I2S_BCLK = 26;
-constexpr uint8_t PIN_I2S_LRCLK = 25;
-constexpr uint8_t PIN_I2S_DATA = 27;
+// Adafruit STEMMA QT MPU-6050 accelerometer and gyroscope I2C bus.
+// VIN connects to 3.3 V, AD0 remains open for address 0x68, and INT is unused.
+constexpr uint8_t PIN_I2C_SDA = 1;
+constexpr uint8_t PIN_I2C_SCL = 2;
 
-constexpr uint8_t PIN_SNAP_BUTTON = 32;
-constexpr uint8_t PIN_START_BUTTON = 33;
-constexpr uint8_t PIN_IMAGE_BUTTON = 14;
-constexpr uint8_t PIN_ENCODER_A = 34;
-constexpr uint8_t PIN_ENCODER_B = 35;
+// Adafruit MAX98357A mono I2S amplifier used for spoken game commands.
+// BCLK, LRC, and DIN are the only required ESP32 signal connections.
+constexpr uint8_t PIN_I2S_BCLK = 39;
+constexpr uint8_t PIN_I2S_LRCLK = 40;
+constexpr uint8_t PIN_I2S_DATA = 41;
+
+// Active-low game pushbuttons. Each button connects its GPIO to common ground;
+// firmware enables the ESP32-S3 internal pull-up resistor.
+constexpr uint8_t PIN_START_BUTTON = 4;
+constexpr uint8_t PIN_SNAP_BUTTON = 5;
+constexpr uint8_t PIN_IMAGE_BUTTON = 7;
+
+// SNAP indicator LED. Connect GPIO6 through a 330-ohm resistor to the LED
+// anode, with the LED cathode connected to common ground.
+constexpr uint8_t PIN_SNAP_LED = 6;
+
+// Bourns Focus rotary encoder. A and B use internal pull-ups; the encoder's
+// C/common terminal connects to ground. Rotation direction does not matter.
+constexpr uint8_t PIN_ENCODER_A = 15;
+constexpr uint8_t PIN_ENCODER_B = 16;
+
+// Optional PT-1520PQ passive buzzer used only by its bench test. The actual
+// game voice audio is produced by the MAX98357A amplifier above.
+constexpr uint8_t PIN_TEST_BUZZER = 17;
 
 constexpr uint32_t SERIAL_BAUD = 115200;
 constexpr uint16_t BUTTON_DEBOUNCE_MS = 25;
+constexpr uint16_t SNAP_LED_PULSE_MS = 150;
 constexpr int64_t ENCODER_COUNTS_PER_ACTION = 2;
 constexpr uint16_t IMU_SAMPLE_INTERVAL_MS = 20;
 constexpr float SHAKE_DELTA_G = 1.2F;
@@ -50,23 +74,6 @@ constexpr uint16_t TILE_COUNT = TILE_COLUMNS * TILE_ROWS;
 constexpr uint8_t TILES_PER_SUCCESS = 10;
 
 constexpr float AUDIO_GAIN = 0.30F;
-
-struct ImageAsset {
-  const char *label;
-  const char *filename;
-};
-
-constexpr ImageAsset IMAGES[] = {
-    {"Color Bars", "/IMAGES/IMG01.BMP"},
-    {"Sunset", "/IMAGES/IMG02.BMP"},
-    {"Mountains", "/IMAGES/IMG03.BMP"},
-};
-
-constexpr size_t IMAGE_COUNT = sizeof(IMAGES) / sizeof(IMAGES[0]);
-
-constexpr char AUDIO_SNAP[] = "/AUDIO/SNAP.WAV";
-constexpr char AUDIO_FOCUS[] = "/AUDIO/FOCUS.WAV";
-constexpr char AUDIO_SHAKE[] = "/AUDIO/SHAKE.WAV";
 
 }  // namespace Config
 
