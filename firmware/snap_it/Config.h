@@ -10,6 +10,9 @@ namespace Config {
 // Adafruit 2050 HX8357D display and its onboard microSD socket. The game now
 // uses embedded media, so MISO and SD CS are retained only to keep the unused
 // card interface safely deselected and available for possible future use.
+// Keep SERIAL_ONLY_MODE true while no working TFT is connected. Set it false
+// after replacing the display to restore all screen drawing.
+constexpr bool SERIAL_ONLY_MODE = true;
 constexpr uint8_t PIN_SPI_SCK = 12;
 constexpr uint8_t PIN_SPI_MISO = 13;
 constexpr uint8_t PIN_SPI_MOSI = 11;

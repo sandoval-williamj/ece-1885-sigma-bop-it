@@ -13,6 +13,14 @@ Display::Display()
     : tft_(Config::PIN_TFT_CS, Config::PIN_TFT_DC, Config::PIN_TFT_RESET) {}
 
 bool Display::begin() {
+  if (Config::SERIAL_ONLY_MODE) {
+    ready_ = true;
+    lastError_ = "";
+    Serial.println(F("Display bypassed: SERIAL-ONLY GAME MODE"));
+    Serial.println(F("Disconnect the damaged TFT before playing."));
+    return true;
+  }
+
   // The card socket is not used, but holding its chip select high prevents it
   // from driving the SPI bus while the TFT is active.
   pinMode(Config::PIN_SD_CS, OUTPUT);
@@ -37,6 +45,21 @@ bool Display::begin() {
 void Display::showPicker(size_t imageIndex) {
   if (imageIndex >= EmbeddedAssets::IMAGE_COUNT) {
     showFault("Invalid embedded image index");
+    return;
+  }
+
+  Serial.println();
+  Serial.println(F("=== IMAGE SELECT ==="));
+  Serial.print(F("Selected: "));
+  Serial.print(EmbeddedAssets::IMAGES[imageIndex].label);
+  Serial.print(F(" ("));
+  Serial.print(imageIndex + 1);
+  Serial.print('/');
+  Serial.print(EmbeddedAssets::IMAGE_COUNT);
+  Serial.println(')');
+  Serial.println(F("Press IMAGE to cycle or START to play."));
+
+  if (Config::SERIAL_ONLY_MODE) {
     return;
   }
 
@@ -73,7 +96,9 @@ bool Display::prepareRound(size_t imageIndex) {
     return false;
   }
 
-  tft_.fillScreen(HX8357_BLACK);
+  if (!Config::SERIAL_ONLY_MODE) {
+    tft_.fillScreen(HX8357_BLACK);
+  }
   shuffleTiles();
   revealedTiles_ = 0;
   Serial.print(F("Round image: "));
@@ -92,6 +117,10 @@ void Display::showCommand(Command command, uint8_t score,
 }
 
 void Display::drawStatus(const __FlashStringHelper *message, uint8_t score) {
+  if (Config::SERIAL_ONLY_MODE) {
+    return;
+  }
+
   tft_.fillRect(0, 0, Config::SCREEN_WIDTH, Config::STATUS_HEIGHT,
                 HX8357_BLACK);
   tft_.setTextSize(2);
@@ -118,8 +147,15 @@ void Display::shuffleTiles() {
 
 void Display::revealNextTiles(uint8_t count) {
   while (count-- > 0 && revealedTiles_ < Config::TILE_COUNT) {
-    drawTile(tileOrder_[revealedTiles_++]);
+    if (!Config::SERIAL_ONLY_MODE) {
+      drawTile(tileOrder_[revealedTiles_]);
+    }
+    ++revealedTiles_;
   }
+  Serial.print(F("Reveal progress: "));
+  Serial.print(revealedTiles_);
+  Serial.print('/');
+  Serial.println(Config::TILE_COUNT);
 }
 
 void Display::drawTile(uint16_t tileIndex) {
@@ -163,23 +199,27 @@ void Display::drawTile(uint16_t tileIndex) {
 
 void Display::showSuccess(uint8_t score) {
   drawStatus(F("NICE!"), score);
+  Serial.print(F("CORRECT | score: "));
+  Serial.println(score);
 }
 
 void Display::showGameOver(uint8_t score, bool timedOut) {
   drawStatus(timedOut ? F("TIME'S UP") : F("WRONG MOVE"), score);
   Serial.print(F("Round over. Score: "));
   Serial.println(score);
+  Serial.println(F("Press START to replay or IMAGE to change photo."));
 }
 
 void Display::showVictory(uint8_t score) {
   drawStatus(F("PHOTO COMPLETE!"), score);
   Serial.println(F("Victory: the complete image is visible."));
+  Serial.println(F("Press START to replay or IMAGE to change photo."));
 }
 
 void Display::showFault(const char *message) {
   Serial.print(F("HARDWARE FAULT: "));
   Serial.println(message);
-  if (!tftStarted_) {
+  if (Config::SERIAL_ONLY_MODE || !tftStarted_) {
     return;
   }
   tft_.fillScreen(HX8357_RED);

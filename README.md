@@ -62,6 +62,15 @@ arduino-cli upload --profile esp32s3_embedded -p /dev/cu.usbmodem0001 firmware/s
 The Pitt photographs and spoken commands are compiled into the sketch. No
 microSD card or media-copy step is required.
 
+## Serial-only game mode
+
+When no working display is available, set `Config::SERIAL_ONLY_MODE` to `true`
+and disconnect the TFT completely. Serial Monitor at 115200 baud then shows
+image selection, commands, scores, reveal progress, game-over messages, and
+victory. The physical buttons, encoder, MPU-6050, SNAP LED, and spoken audio
+continue to operate normally. Set the option back to `false` after installing
+a replacement display.
+
 The GPIO assignments are provisional. Hardware must review `Config.h` and
 `docs/hardware.md` before PCB layout.
 

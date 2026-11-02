@@ -11,6 +11,8 @@ session. Use the Serial Monitor at 115200 baud alongside the display.
       the red hardware-fault screen.
 - [ ] The game starts and completes a round with no microSD card installed and
       with PSRAM disabled.
+- [ ] With `SERIAL_ONLY_MODE=true` and the TFT disconnected, Serial Monitor
+      shows selection, command, score, reveal, game-over, and victory output.
 
 ## Component tests
 
