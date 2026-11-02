@@ -20,4 +20,4 @@ jobs:
           version: 1.4.1
 
       - name: Compile ESP32 firmware
-        run: arduino-cli compile --profile esp32_psram firmware/snap_it
+        run: arduino-cli compile --profile esp32s3_embedded firmware/snap_it
