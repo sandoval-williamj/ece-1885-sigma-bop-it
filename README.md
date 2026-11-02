@@ -14,8 +14,19 @@ leaves the earned portion visible.
 ## Repository layout
 
 - `firmware/snap_it/` — the Arduino sketch and its small firmware modules.
+- `firmware/tests/` — isolated ESP32-S3 bring-up sketches for the display,
+  buttons, and future hardware components.
 - `assets/sdcard/` — the exact directory tree to copy to a FAT32 microSD card.
 - `docs/hardware.md` — selected parts, provisional wiring, and electrical notes.
+- `docs/display-bringup.md` — minimum wiring and upload steps for the display.
+- `docs/button-bringup.md` — SNAP button and indicator LED wiring and test.
+- `docs/encoder-bringup.md` — Focus rotary encoder wiring and test.
+- `docs/input-integration.md` — combined display, SNAP, and Focus input test.
+- `docs/buzzer-bringup.md` — optional passive-piezo PWM test.
+- `docs/amplifier-speaker-bringup.md` — MAX98357A and speaker wiring/test.
+- `docs/imu-bringup.md` — MPU-compatible IMU identification and motion test.
+- `docs/pitt-image-bringup.md` — three-photo Pitt slideshow embedded in flash.
+- `docs/two-input-game-bringup.md` — two-input game and random-pixel reveal test.
 - `docs/testing.md` — bench test and gameplay acceptance checklist.
 
 The firmware is intentionally a conventional Arduino sketch. Open
