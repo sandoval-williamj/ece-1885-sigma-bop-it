@@ -1,0 +1,9 @@
+default_profile: esp32s3_buzzer_test
+
+profiles:
+  esp32s3_buzzer_test:
+    notes: ESP32-S3 target for the optional PT-1520PQ passive piezo test.
+    fqbn: esp32:esp32:esp32s3:USBMode=hwcdc,CDCOnBoot=cdc
+    platforms:
+      - platform: esp32:esp32 (3.3.12)
+        platform_index_url: https://espressif.github.io/arduino-esp32/package_esp32_index.json

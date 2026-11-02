@@ -1,0 +1,6 @@
+.DS_Store
+*.swp
+*.swo
+.arduino15/
+build/
+
