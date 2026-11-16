@@ -17,8 +17,11 @@ const EmbeddedAssets::AudioAsset &assetForCommand(Command command) {
       return EmbeddedAssets::AUDIO_FOCUS;
     case Command::Shake:
       return EmbeddedAssets::AUDIO_SHAKE;
+    default:
+      break;
   }
-  return EmbeddedAssets::AUDIO_SNAP;
+  // Every valid Command returns above; reaching this point is a programming error.
+  __builtin_unreachable();
 }
 
 }  // namespace
